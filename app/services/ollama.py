@@ -9,7 +9,7 @@ async def generate(prompt: str) -> str:
         "prompt": prompt,
         "stream": False,
         "options": {
-            "num_predict": 120,
+            "num_predict": 250,
             "temperature": 0.2,
         },
     }
@@ -27,22 +27,13 @@ async def generate(prompt: str) -> str:
             json=payload,
         )
         response.raise_for_status()
-        return response.json().get("response", "").strip()
 
+        data = response.json()
+        answer = data.get("response", "").strip()
 
-async def weather_recommendation(event: dict) -> str:
-    prompt = f"""You are a concise outdoor activity advisor.
+        if not answer:
+            raise RuntimeError(
+                f"Ollama returned an empty response: {data}"
+            )
 
-Activity: {settings.activity}
-City: {event['city']}
-Date: {event['forecast_date']}
-Temperature: {event['temp_min']} to {event['temp_max']} C
-Rain probability: {event['rain_probability']}%
-Wind: {event['wind_speed']} km/h
-Weather code: {event['weather_code']}
-
-Give a maximum 2-sentence recommendation.
-Use only the supplied weather facts.
-Do not invent information and do not explain your reasoning process.
-"""
-    return await generate(prompt)
+        return answer
