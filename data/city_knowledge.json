@@ -1,0 +1,12 @@
+[
+  {"city":"Rome","category":"history","title":"Historic center","content":"Rome's historic center contains major ancient Roman, Renaissance and Baroque landmarks, including the Colosseum, Roman Forum and Pantheon."},
+  {"city":"Rome","category":"attractions","title":"Villa Borghese","content":"A large central park suitable for walking, cycling and combining outdoor activity with nearby museums."},
+  {"city":"London","category":"history","title":"Historic London","content":"London combines Roman origins, medieval institutions and modern cultural districts. Major historic areas include Westminster and the City of London."},
+  {"city":"London","category":"shopping","title":"Shopping areas","content":"Oxford Street, Regent Street and Covent Garden are major central shopping areas; markets include Borough Market and Camden Market."},
+  {"city":"Tel Aviv","category":"attractions","title":"Seafront","content":"Tel Aviv has a long Mediterranean promenade and beaches, popular for walking, running, cycling and sunset viewing."},
+  {"city":"Tel Aviv","category":"food","title":"Markets and dining","content":"Carmel Market and surrounding neighborhoods offer casual food, restaurants and nightlife."},
+  {"city":"Budapest","category":"attractions","title":"Danube and Castle District","content":"Budapest's Danube riverfront, Buda Castle district and bridges are major sightseeing areas with extensive walking routes."},
+  {"city":"Budapest","category":"wellness","title":"Thermal baths","content":"Budapest is known for historic thermal baths such as Széchenyi and Gellért."},
+  {"city":"Lisbon","category":"attractions","title":"Historic hills","content":"Lisbon's Alfama, Baixa and Belém districts combine historic architecture, viewpoints and riverside walks."},
+  {"city":"Lisbon","category":"food","title":"Local dining","content":"Lisbon is known for seafood, traditional Portuguese cooking and pastry shops, particularly around central districts and Belém."}
+]
