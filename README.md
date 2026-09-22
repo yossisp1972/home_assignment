@@ -107,8 +107,6 @@ docker compose logs -f producer consumer api
 - `Plan a one-day outdoor itinerary in Lisbon.`
 - `Should I run tomorrow in Tel Aviv?`
 
-![Travel Agent](docs/images/travel-agent.png)
-
 ## Main data flow
 
 1. Producer fetches seven-day forecasts for Rome, London, Tel Aviv, Budapest and Lisbon.
