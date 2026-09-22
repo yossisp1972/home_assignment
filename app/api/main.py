@@ -1,3 +1,4 @@
+import httpx
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from prometheus_client import Counter, Histogram, make_asgi_app
@@ -13,6 +14,7 @@ app = FastAPI(title="On-Prem Weather & Travel Agent", version="1.0.0")
 app.mount("/metrics", make_asgi_app())
 
 CHAT = Counter("agent_requests_total", "Agent requests")
+CHAT_ERRORS = Counter("agent_errors_total", "Agent request errors", ["type"])
 LAT = Histogram("agent_request_duration_seconds", "Agent request latency")
 
 
@@ -83,5 +85,18 @@ def weather(city: str):
 @app.post("/agent/chat")
 async def chat(req: ChatRequest):
     CHAT.inc()
-    with LAT.time():
-        return {"answer": await answer(req.question)}
+    try:
+        with LAT.time():
+            return {"answer": await answer(req.question)}
+    except httpx.ReadTimeout as exc:
+        CHAT_ERRORS.labels("timeout").inc()
+        raise HTTPException(
+            status_code=504,
+            detail="Local LLM inference timed out",
+        ) from exc
+    except Exception as exc:
+        CHAT_ERRORS.labels("internal").inc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Agent request failed: {exc}",
+        ) from exc

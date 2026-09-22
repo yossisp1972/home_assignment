@@ -56,7 +56,7 @@ A containerized weather and travel recommendation system designed to run on-prem
 - **Open-Meteo**: simple external weather source for five cities.
 - **RabbitMQ**: durable asynchronous ingestion, publisher confirms, manual acknowledgements and a DLQ.
 - **PostgreSQL**: durable local source of truth for weather, tourism knowledge, events and recommendations.
-- **Ollama + Qwen2.5 3B**: local open-weight LLM inference with no external LLM API.
+- **Ollama + Qwen2.5 3B Instruct**: local open-weight LLM inference with no external LLM API.
 - **FastAPI**: agent/query API.
 - **Streamlit**: fast dashboard and chat UX.
 - **Prometheus + Grafana**: bonus observability.
@@ -179,7 +179,7 @@ tests/             unit tests
 
 For only five cities, the system uses structured PostgreSQL retrieval instead of adding a vector database. This reduces operational complexity and keeps the submission easy to run on-prem. If the knowledge base becomes large, PostgreSQL can be extended with pgvector without adding a separate database.
 
-A small Qwen model is used to keep CPU/RAM requirements reasonable. The model name is configurable through `OLLAMA_MODEL`.
+The reference configuration uses `qwen2.5:3b-instruct` to keep CPU/RAM requirements reasonable while preserving useful instruction-following behavior. The model name is configurable through `OLLAMA_MODEL`, so GPU-backed installations can select a larger model without changing the application code.
 
 ## Validation notes
 
@@ -193,4 +193,4 @@ During validation, the following flow was confirmed:
 4. Enriched forecast records were committed to PostgreSQL.
 5. FastAPI and Streamlit served the synchronized data and agent interface.
 
-On CPU-only hosts, local inference can be slow. `OLLAMA_MODEL` is configurable in `.env`; `qwen3:4b` was validated, while a smaller Qwen model can be selected for a faster demo without changing the architecture.
+On CPU-only hosts, local inference can be slow. The reference deployment was validated with `qwen2.5:3b-instruct` through Ollama. `OLLAMA_MODEL` is configurable in `.env`, so GPU-backed on-prem systems can use a larger model without changing the architecture.

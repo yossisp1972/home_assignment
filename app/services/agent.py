@@ -7,12 +7,49 @@ from app.models.entities import CityKnowledge, Event, WeatherForecast
 from app.services.ollama import generate
 
 
-CITY_NAMES = ["Rome", "London", "Tel Aviv", "Budapest", "Lisbon"]
+SUPPORTED_CITIES = ["Rome", "London", "Tel Aviv", "Budapest", "Lisbon"]
 
 
 def detect_city(question: str) -> str | None:
     q = question.lower()
-    return next((city for city in CITY_NAMES if city.lower() in q), None)
+    return next((city for city in SUPPORTED_CITIES if city.lower() in q), None)
+
+
+def classify_context(question: str) -> tuple[bool, bool, bool]:
+    """Choose only the local data needed for the question.
+
+    This keeps prompts small enough for CPU-only local inference while still
+    grounding weather, tourism and event answers in PostgreSQL.
+    """
+    q = question.lower()
+
+    weather_terms = (
+        "weather", "forecast", "temperature", "rain", "wind", "sunny",
+        "tomorrow", "today", "outdoor", "run", "running",
+    )
+    tourism_terms = (
+        "trip", "itinerary", "visit", "tourism", "attraction", "history",
+        "shopping", "dining", "restaurant", "places", "things to do",
+        "activity", "activities",
+    )
+    event_terms = (
+        "event", "events", "concert", "concerts", "sport", "sports",
+        "game", "games", "match", "matches", "show", "shows",
+    )
+
+    use_weather = any(term in q for term in weather_terms)
+    use_tourism = any(term in q for term in tourism_terms)
+    use_events = any(term in q for term in event_terms)
+
+    # Broad planning questions benefit from both weather and city knowledge.
+    if use_tourism:
+        use_weather = True
+
+    # If the intent is unclear, provide a bounded mix rather than no context.
+    if not any((use_weather, use_tourism, use_events)):
+        use_weather = use_tourism = True
+
+    return use_weather, use_tourism, use_events
 
 
 def latest_weather_statement(city: str | None = None):
@@ -31,7 +68,7 @@ def latest_weather_statement(city: str | None = None):
         .subquery()
     )
 
-    stmt = (
+    return (
         select(WeatherForecast)
         .join(
             latest,
@@ -44,81 +81,84 @@ def latest_weather_statement(city: str | None = None):
         .order_by(WeatherForecast.city, WeatherForecast.forecast_date)
     )
 
-    return stmt
 
-
-def retrieve_context(question: str) -> str:
+def retrieve_context(question: str) -> tuple[str, str | None]:
     city = detect_city(question)
+    use_weather, use_tourism, use_events = classify_context(question)
+    chunks: list[str] = []
 
     with SessionLocal() as db:
-        chunks = []
+        if use_weather:
+            for weather in db.scalars(latest_weather_statement(city)):
+                chunks.append(
+                    "WEATHER "
+                    f"{weather.city} {weather.forecast_date}: "
+                    f"temperature {weather.temp_min}-{weather.temp_max} C, "
+                    f"rain probability {weather.rain_probability}%, "
+                    f"wind {weather.wind_speed} km/h, "
+                    f"weather code {weather.weather_code}. "
+                    f"Recommendation: {weather.recommendation or ''}"
+                )
 
-        weather_stmt = latest_weather_statement(city)
-        knowledge_stmt = select(CityKnowledge).limit(30)
-        events_stmt = (
-            select(Event)
-            .where(
+        if use_tourism:
+            knowledge_stmt = select(CityKnowledge)
+            if city:
+                knowledge_stmt = knowledge_stmt.where(CityKnowledge.city == city)
+            knowledge_stmt = knowledge_stmt.order_by(
+                CityKnowledge.city,
+                CityKnowledge.category,
+                CityKnowledge.title,
+            ).limit(15)
+
+            for knowledge in db.scalars(knowledge_stmt):
+                chunks.append(
+                    f"CITY {knowledge.city} [{knowledge.category}] "
+                    f"{knowledge.title}: {knowledge.content}"
+                )
+
+        if use_events:
+            events_stmt = select(Event).where(
                 Event.event_date >= date.today(),
                 Event.event_date <= date.today() + timedelta(days=30),
             )
-            .order_by(Event.event_date)
-            .limit(30)
-        )
+            if city:
+                events_stmt = events_stmt.where(Event.city == city)
+            events_stmt = events_stmt.order_by(Event.event_date).limit(10)
 
-        if city:
-            knowledge_stmt = (
-                select(CityKnowledge)
-                .where(CityKnowledge.city == city)
-                .limit(30)
-            )
-            events_stmt = (
-                select(Event)
-                .where(
-                    Event.city == city,
-                    Event.event_date >= date.today(),
-                    Event.event_date <= date.today() + timedelta(days=30),
+            for event in db.scalars(events_stmt):
+                chunks.append(
+                    f"EVENT {event.city} {event.event_date} [{event.category}] "
+                    f"{event.title} at {event.venue or 'Not specified'}: "
+                    f"{event.description or ''}"
                 )
-                .order_by(Event.event_date)
-                .limit(30)
-            )
 
-        for weather in db.scalars(weather_stmt):
-            chunks.append(
-                "WEATHER "
-                f"{weather.city} {weather.forecast_date}: "
-                f"{weather.temp_min}-{weather.temp_max}C, "
-                f"rain {weather.rain_probability}%, "
-                f"wind {weather.wind_speed} km/h. "
-                f"Recommendation: {weather.recommendation}"
-            )
-
-        for knowledge in db.scalars(knowledge_stmt):
-            chunks.append(
-                f"CITY {knowledge.city} [{knowledge.category}] "
-                f"{knowledge.title}: {knowledge.content}"
-            )
-
-        for event in db.scalars(events_stmt):
-            chunks.append(
-                f"EVENT {event.city} {event.event_date} "
-                f"[{event.category}] {event.title} at {event.venue}: "
-                f"{event.description}"
-            )
-
-    return "\n".join(chunks)
+    return "\n".join(chunks), city
 
 
 async def answer(question: str) -> str:
-    context = retrieve_context(question)
+    context, city = retrieve_context(question)
 
     if not context.strip():
         return "No synchronized local information is available for that question yet."
 
-    prompt = f"""You are an on-prem travel and weather agent.
-Answer using ONLY the supplied local context.
-Do not invent current events, weather, places, or facts.
-If event information is absent, say that current event information has not been synchronized.
-Today is {date.today()}.
+    detected_city = city or "not explicitly specified"
+    today = date.today().isoformat()
+
+    prompt = f"""You are a local weather and travel assistant running fully on-prem.
+Today's date is {today}.
+Detected city: {detected_city}.
+
+Answer the user's question directly and concisely.
+Do not describe your reasoning process.
+Do not mention how context was created or retrieved.
+Do not say phrases such as "we are given", "the user asks", or "looking at the context".
+Return only the final user-facing answer.
+
+Use only the LOCAL CONTEXT below.
+If required current information is missing, say that it has not been synchronized.
+Do not invent weather, attractions, restaurants, concerts, sports events, venues, or other facts.
+Interpret "today" and "tomorrow" relative to {today}.
+For itineraries, organize the answer into a short practical plan and adapt it to the stored weather.
 
 LOCAL CONTEXT:
 {context}
@@ -126,8 +166,7 @@ LOCAL CONTEXT:
 USER QUESTION:
 {question}
 
-Provide a concise, useful answer.
-For itinerary requests, organize the answer by time of day.
+FINAL ANSWER:
 """
 
     return await generate(prompt)

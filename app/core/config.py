@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     rabbitmq_queue: str = "weather.events"
     rabbitmq_dlq: str = "weather.events.dlq"
     ollama_url: str = "http://ollama:11434"
-    ollama_model: str = "qwen3:4b"
-    weather_update_minutes: int = 30
+    ollama_model: str = "qwen2.5:3b-instruct"
+    weather_update_minutes: int = 360
     max_retries: int = 5
     activity: str = "running"
     api_url: str = "http://api:8000"
