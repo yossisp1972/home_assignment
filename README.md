@@ -180,3 +180,17 @@ tests/             unit tests
 For only five cities, the system uses structured PostgreSQL retrieval instead of adding a vector database. This reduces operational complexity and keeps the submission easy to run on-prem. If the knowledge base becomes large, PostgreSQL can be extended with pgvector without adding a separate database.
 
 A small Qwen model is used to keep CPU/RAM requirements reasonable. The model name is configurable through `OLLAMA_MODEL`.
+
+## Validation notes
+
+The stack was validated end-to-end on a Linux EC2 host using Docker Compose. AWS is not a runtime dependency; EC2 was used only as a convenient Linux test host, and the same Compose stack can run on an on-prem Linux server.
+
+During validation, the following flow was confirmed:
+
+1. Open-Meteo returned forecast data for the configured cities.
+2. The producer published persistent events to RabbitMQ.
+3. The consumer processed events with manual acknowledgements and generated recommendations through local Ollama/Qwen inference.
+4. Enriched forecast records were committed to PostgreSQL.
+5. FastAPI and Streamlit served the synchronized data and agent interface.
+
+On CPU-only hosts, local inference can be slow. `OLLAMA_MODEL` is configurable in `.env`; `qwen3:4b` was validated, while a smaller Qwen model can be selected for a faster demo without changing the architecture.
