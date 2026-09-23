@@ -92,13 +92,49 @@ docker compose ps
 docker compose logs -f producer consumer api
 ```
 
-## URLs
+## Accessing the application
 
-- Streamlit: http://localhost:8501
-- FastAPI docs: http://localhost:8000/docs
-- RabbitMQ UI: http://localhost:15672 (`weather` / `weather`)
-- Prometheus: http://localhost:9090
-- Grafana: http://localhost:3000
+Docker Compose publishes the following service ports:
+
+| Service | Port |
+| --- | ---: |
+| Streamlit UI | 8501 |
+| FastAPI | 8000 |
+| Grafana | 3000 |
+| Prometheus | 9090 |
+| RabbitMQ Management | 15672 |
+
+### Local deployment
+
+When Docker Compose is running on the same machine as your browser:
+
+- Streamlit: `http://localhost:8501`
+- FastAPI docs: `http://localhost:8000/docs`
+- RabbitMQ UI: `http://localhost:15672` (`weather` / `weather`)
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000`
+
+### Remote or on-prem server
+
+When the stack runs on a remote Linux or on-prem server, access can be provided through the organization's internal network/reverse proxy, or securely through SSH port forwarding.
+
+Example:
+
+```bash
+ssh \
+  -L 8501:localhost:8501 \
+  -L 8000:localhost:8000 \
+  -L 3000:localhost:3000 \
+  user@SERVER_IP
+```
+
+After the tunnel is established, open from the local workstation:
+
+- Streamlit: `http://localhost:8501`
+- FastAPI docs: `http://localhost:8000/docs`
+- Grafana: `http://localhost:3000`
+
+For a production on-prem deployment, these services would normally be exposed through the internal network, DNS, TLS and a reverse proxy/load balancer rather than exposing container ports directly to the public Internet.
 
 ## Example questions
 
@@ -113,13 +149,13 @@ docker compose logs -f producer consumer api
 2. Each forecast row is published to RabbitMQ.
 3. Consumer reads from the queue and asks the local LLM for an activity recommendation.
 4. Consumer writes the enriched record to PostgreSQL and then ACKs the queue message.
-5. Agent retrieves local weather, tourism and event context from PostgreSQL.
-6. Agent sends only that context plus the user question to the local LLM.
+5. Agent detects the relevant supported city and retrieves targeted local weather, tourism and event context from PostgreSQL.
+6. Agent sends the bounded local context plus the user question to the local LLM.
 7. FastAPI returns the answer to Streamlit.
 
 ## Data update
 
-Weather refresh interval is configured with `WEATHER_UPDATE_MINUTES` (default `30`). Restarting the producer also triggers an immediate collection cycle.
+Weather refresh interval is configured with `WEATHER_UPDATE_MINUTES` (default `360`, or six hours). Restarting the producer also triggers an immediate collection cycle.
 
 Tourism seed data lives in `data/city_knowledge.json`. Event seed/import data lives in `data/events.json`.
 
