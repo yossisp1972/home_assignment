@@ -22,7 +22,7 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 20
 
     restart: unless-stopped
 
@@ -53,7 +53,7 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 20
+      retries: 30
 
     restart: unless-stopped
 
@@ -76,16 +76,18 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 20
+      retries: 30
 
     restart: unless-stopped
 
 
   # ============================================================
-  # Ollama model initialization
+  # Ollama Model Initialization
   #
-  # Pulls the configured model before API/consumer are allowed
-  # to start.
+  # Waits for Ollama, pulls the configured model, verifies it,
+  # then exits successfully.
+  #
+  # Consumer and API will not start until this service exits 0.
   # ============================================================
   ollama-init:
     image: ollama/ollama:latest
@@ -98,11 +100,29 @@ services:
       OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b-instruct}
 
-    entrypoint: ["/bin/sh", "-c"]
+    entrypoint: /bin/sh
 
-    command: >
-      ollama pull "$${OLLAMA_MODEL}" &&
-      ollama show "$${OLLAMA_MODEL}"
+    command:
+      - -c
+      - |
+        set -e
+
+        echo "Waiting for Ollama API..."
+
+        until ollama list >/dev/null 2>&1; do
+          echo "Ollama is not ready yet..."
+          sleep 2
+        done
+
+        echo "Ollama is ready."
+
+        echo "Pulling model: $${OLLAMA_MODEL}"
+        ollama pull "$${OLLAMA_MODEL}"
+
+        echo "Verifying model: $${OLLAMA_MODEL}"
+        ollama show "$${OLLAMA_MODEL}" >/dev/null
+
+        echo "Model is ready: $${OLLAMA_MODEL}"
 
     restart: "no"
 
@@ -110,8 +130,10 @@ services:
   # ============================================================
   # Weather Producer
   #
-  # Fetches weather from Open-Meteo and publishes events
-  # to RabbitMQ.
+  # Fetches weather from Open-Meteo and publishes forecast
+  # events to RabbitMQ.
+  #
+  # Metrics: producer:9101
   # ============================================================
   producer:
     build: .
@@ -136,11 +158,11 @@ services:
   # ============================================================
   # Weather Consumer
   #
-  # Reads RabbitMQ messages, calls the local LLM, persists
-  # enriched forecasts to PostgreSQL, then ACKs the message.
+  # Consumes weather events from RabbitMQ.
+  # Calls Qwen through Ollama to generate recommendations.
+  # Persists enriched forecasts to PostgreSQL.
   #
-  # Important:
-  # ollama-init must complete successfully before this starts.
+  # Metrics: consumer:9102
   # ============================================================
   consumer:
     build: .
@@ -170,6 +192,9 @@ services:
 
   # ============================================================
   # FastAPI
+  #
+  # HTTP API used by Streamlit and other clients.
+  # Agent queries local PostgreSQL context and Qwen/Ollama.
   # ============================================================
   api:
     build: .
@@ -245,6 +270,9 @@ services:
 
   # ============================================================
   # Grafana
+  #
+  # Datasource and dashboard are provisioned directly from
+  # files committed to the repository.
   # ============================================================
   grafana:
     image: grafana/grafana:latest
@@ -264,7 +292,7 @@ services:
 
 
 # ==============================================================
-# Persistent Docker volumes
+# Persistent Docker Volumes
 # ==============================================================
 volumes:
 
