@@ -1,1 +1,126 @@
-[]
+[
+  {
+    "city": "Tel Aviv",
+    "title": "Tel Aviv Live Music Night",
+    "event_date": "2026-10-02",
+    "category": "concert",
+    "venue": "Tel Aviv",
+    "description": "Demo local music event stored in the offline event knowledge base."
+  },
+  {
+    "city": "Tel Aviv",
+    "title": "Yarkon Park Running Event",
+    "event_date": "2026-10-03",
+    "category": "sports",
+    "venue": "Yarkon Park",
+    "description": "Demo recreational running event for visitors interested in outdoor activities."
+  },
+  {
+    "city": "Tel Aviv",
+    "title": "Tel Aviv Food and Culture Evening",
+    "event_date": "2026-10-04",
+    "category": "food",
+    "venue": "Central Tel Aviv",
+    "description": "Demo event featuring local food and cultural experiences."
+  },
+
+  {
+    "city": "London",
+    "title": "London Live Music Evening",
+    "event_date": "2026-10-02",
+    "category": "concert",
+    "venue": "Central London",
+    "description": "Demo live music event for visitors looking for evening entertainment."
+  },
+  {
+    "city": "London",
+    "title": "London Football Experience",
+    "event_date": "2026-10-03",
+    "category": "sports",
+    "venue": "London",
+    "description": "Demo football-related visitor event representing London's sporting culture."
+  },
+  {
+    "city": "London",
+    "title": "London Food and Dining Festival",
+    "event_date": "2026-10-04",
+    "category": "food",
+    "venue": "Central London",
+    "description": "Demo culinary event featuring dining and local food experiences."
+  },
+
+  {
+    "city": "Rome",
+    "title": "Rome Classical Music Evening",
+    "event_date": "2026-10-02",
+    "category": "concert",
+    "venue": "Central Rome",
+    "description": "Demo classical music event for visitors spending an evening in Rome."
+  },
+  {
+    "city": "Rome",
+    "title": "Historic Rome Walking Day",
+    "event_date": "2026-10-03",
+    "category": "culture",
+    "venue": "Historic Centre of Rome",
+    "description": "Demo cultural event focused on Rome's historic districts and landmarks."
+  },
+  {
+    "city": "Rome",
+    "title": "Rome Football Evening",
+    "event_date": "2026-10-04",
+    "category": "sports",
+    "venue": "Rome",
+    "description": "Demo football-related event representing Rome's local sporting culture."
+  },
+
+  {
+    "city": "Lisbon",
+    "title": "Lisbon Fado Evening",
+    "event_date": "2026-10-02",
+    "category": "concert",
+    "venue": "Alfama",
+    "description": "Demo evening centered on Lisbon's traditional Fado music."
+  },
+  {
+    "city": "Lisbon",
+    "title": "Lisbon Riverside Running Event",
+    "event_date": "2026-10-03",
+    "category": "sports",
+    "venue": "Lisbon Waterfront",
+    "description": "Demo recreational running event along Lisbon's waterfront."
+  },
+  {
+    "city": "Lisbon",
+    "title": "Lisbon Food and Culture Festival",
+    "event_date": "2026-10-04",
+    "category": "food",
+    "venue": "Central Lisbon",
+    "description": "Demo event featuring Portuguese food and local cultural experiences."
+  },
+
+  {
+    "city": "Budapest",
+    "title": "Budapest Classical Music Evening",
+    "event_date": "2026-10-02",
+    "category": "concert",
+    "venue": "Central Budapest",
+    "description": "Demo classical music event for visitors looking for evening entertainment."
+  },
+  {
+    "city": "Budapest",
+    "title": "Budapest Danube Running Event",
+    "event_date": "2026-10-03",
+    "category": "sports",
+    "venue": "Danube Promenade",
+    "description": "Demo recreational running event along the Danube."
+  },
+  {
+    "city": "Budapest",
+    "title": "Budapest Food and Culture Day",
+    "event_date": "2026-10-04",
+    "category": "food",
+    "venue": "Central Budapest",
+    "description": "Demo event featuring Hungarian food and cultural experiences."
+  }
+]
