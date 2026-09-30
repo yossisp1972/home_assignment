@@ -13,5 +13,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: pytest -q
+      - name: Create CI environment file
+        run: cp .env.example .env
       - run: docker compose config
       - run: docker build -t weather-trip-agent:${{ github.sha }} .
